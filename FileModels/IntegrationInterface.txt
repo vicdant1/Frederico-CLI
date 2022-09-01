@@ -1,0 +1,11 @@
+using HubCount.Nfes.Domain.Invoice;
+
+namespace HubCount.Nfes.Integration.Importers
+{
+    /// <summary>
+    /// Interface para a classe de importação de notas fiscais do sistema __SystemName__
+    /// </summary>
+    public interface I__SystemName__Integration : IInvoiceIntegration
+    {
+    }
+}

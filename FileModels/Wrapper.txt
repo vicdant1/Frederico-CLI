@@ -1,0 +1,116 @@
+using HubCount.Nfes.Domain.Enums;
+using HubCount.Nfes.Domain.Invoice.Base;
+using HubCount.Nfes.Util;
+using System;
+using System.Collections.Generic;
+using System.Dynamic;
+using System.Globalization;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace HubCount.Nfes.Integration.NFe.InvoiceIntegration.Wrappers
+{
+    public class __SystemName__Wrapper : NFeImporterDynamicWrapper
+    {
+        public __SystemName__Wrapper(DynamicObject nfe, EInvoiceClass nfeClass, Double aliquotaDivisor) : base(nfe, nfeClass, aliquotaDivisor) { }
+
+        public override List<string> CompanyCityNodes => new List<string>();
+
+        public override string CompanyCPFCNPJ => NFeClassFieldInvert(
+                                                    NFe.Nfse.InfNfse.DeclaracaoPrestacaoServico.InfDeclaracaoPrestacaoServico.Prestador.CpfCnpj.Cnpj.Value,
+                                                    NFe.Nfse.InfNfse.DeclaracaoPrestacaoServico.InfDeclaracaoPrestacaoServico.Tomador.IdentificacaoTomador.CpfCnpj.Cnpj.Count > 0 ?
+                                                        NFe.Nfse.InfNfse.DeclaracaoPrestacaoServico.InfDeclaracaoPrestacaoServico.Tomador.IdentificacaoTomador.CpfCnpj.Cnpj.Value :
+                                                        NFe.Nfse.InfNfse.DeclaracaoPrestacaoServico.InfDeclaracaoPrestacaoServico.Tomador.IdentificacaoTomador.CpfCnpj.Cpf.Value);
+
+        public override string Number => Convert.ToString(NFe.Nfse.InfNfse.Numero.Value);
+
+        public override string VerificationCode => NFe.Nfse.InfNfse.CodigoVerificacao.Value;
+
+        public override DateTime IssueDate => DateTime.ParseExact((string)NFe.Nfse.InfNfse.DataEmissao.Value, "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
+
+        public override EInvoiceStatus Status =>
+            NFe.NfseSubstituicao.Count > 0 ? EInvoiceStatus.Replaced :
+            NFe.NfseCancelamento.Count > 0 ? EInvoiceStatus.Canceled :
+            EInvoiceStatus.Normal;
+
+        public override DateTime? CancellationDate =>
+                    NFe.NfseCancelamento.Count == 0 ?
+                        null :
+                        Convert.ToDateTime(NFe.NfseCancelamento.Confirmacao.DataHora.Value);
+
+        public override string ServiceCode =>
+                    string.IsNullOrWhiteSpace(NFe.Nfse.InfNfse.DeclaracaoPrestacaoServico.InfDeclaracaoPrestacaoServico.Servico.ItemListaServico.Value) ?
+                        null :
+                        NFe.Nfse.InfNfse.DeclaracaoPrestacaoServico.InfDeclaracaoPrestacaoServico.Servico.ItemListaServico.Value;
+
+        public override double? ServiceTaxRate =>
+                    string.IsNullOrWhiteSpace(NFe.Nfse.InfNfse.DeclaracaoPrestacaoServico.InfDeclaracaoPrestacaoServico.Servico.Valores.Aliquota.Value) ?
+                        null :
+                        Convert.ToDouble(NFe.Nfse.InfNfse.DeclaracaoPrestacaoServico.InfDeclaracaoPrestacaoServico.Servico.Valores.Aliquota.Value, _numberCulture) / _divisor;
+
+        public override decimal Value => Convert.ToDecimal(NFe.Nfse.InfNfse.DeclaracaoPrestacaoServico.InfDeclaracaoPrestacaoServico.Servico.Valores.ValorServicos.Value, _numberCulture);
+        protected dynamic Company => NFeClassFieldInvert(NFe.Nfse.InfNfse.PrestadorServico, NFe.Nfse.InfNfse.DeclaracaoPrestacaoServico.InfDeclaracaoPrestacaoServico.Tomador);
+
+        protected dynamic CompanyId => NFeClassFieldInvert(Company.IdentificacaoPrestador, Company.IdentificacaoTomador);
+
+        protected dynamic Provider => NFeClassField(NFe.Nfse.InfNfse.PrestadorServico, NFe.Nfse.InfNfse.DeclaracaoPrestacaoServico.InfDeclaracaoPrestacaoServico.Tomador);
+
+        protected dynamic ProviderId => NFeClassField(NFe.Nfse.InfNfse.DeclaracaoPrestacaoServico.InfDeclaracaoPrestacaoServico.Prestador, Provider.IdentificacaoTomador);
+
+        public override string ProviderPhone => Provider.Contato.Telefone.Count > 0 ? Provider.Contato.Telefone.Value : null;
+
+        public override string ProviderCPFCNPJ =>
+                    string.IsNullOrWhiteSpace(ProviderId.CpfCnpj.Cnpj.Value) ?
+                        ((string)ProviderId.CpfCnpj.Cpf.Value).FormatAsCPF() :
+                        ((string)ProviderId.CpfCnpj.Cnpj.Value).FormatAsCNPJ();
+
+        public override string ProviderName =>
+                    string.IsNullOrEmpty(Provider.RazaoSocial.Value) ?
+                        "(Vazio)" :
+                        Provider.RazaoSocial.Value;
+
+        public override string ProviderMunicipalRegistration =>
+                    string.IsNullOrEmpty(ProviderId.InscricaoMunicipal.Value) ?
+                        null :
+                        Convert.ToString(ProviderId.InscricaoMunicipal.Value);
+
+        public override string ProviderCityCode => Provider.Endereco.Cidade.Value;
+
+        public override string ProviderStateAcronym => Provider.Endereco.Estado.Value;
+
+        public override string ProviderCEP => Provider.Endereco.Cep.Value;
+
+        public override string ProviderEmail => Provider.Email.Value;
+
+
+        public override decimal? InssTax => NFe.Servico.Valores.ValorInss.Count > 0 ? Convert.ToDecimal(NFe.Servico.Valores.ValorInss.Value, _numberCulture) : null;
+
+        public override decimal? IrrfTax => NFe.Servico.Valores.ValorIr.Count > 0 ? Convert.ToDecimal(NFe.Servico.Valores.ValorIr.Value, _numberCulture) : null;
+
+        public override decimal? CsllTax => NFe.Servico.Valores.ValorCsll.Count > 0 ? Convert.ToDecimal(NFe.Servico.Valores.ValorCsll.Value, _numberCulture) : null;
+
+        public override decimal? PisTax => NFe.Servico.Valores.ValorPis.Count > 0 ? Convert.ToDecimal(NFe.Servico.Valores.ValorPis.Value, _numberCulture) : null;
+
+        public override decimal? CofinsTax => NFe.Servico.Valores.ValorCofins.Count > 0 ? Convert.ToDecimal(NFe.Servico.Valores.ValorCofins.Value, _numberCulture) : null;
+
+        /// <summary>
+        /// Correção ISS Retido
+        /// Campo = 1 é retido
+        /// Campo = 2 não é retido
+        /// </summary>
+        public override bool? IsISSWithhold => NFe.Servico.Valores.IssRetido.Value == "1";
+
+        public override decimal? IssWithholdValue => NFe.Servico.Valores.ValorIssRetido.Count > 0 ? Convert.ToDecimal(NFe.Servico.Valores.ValorIssRetido.Value, _numberCulture) : null;
+        public override decimal? IssPayed => NFe.Servico.Valores.ValorIss.Count > 0 ? Convert.ToDecimal(NFe.Servico.Valores.ValorIss.Value, _numberCulture) : null;
+
+        public override DateTime? CompetencyDate => NFe.Competencia.Count > 0 ? 
+                DateTime.ParseExact(((string)NFe.Nfse.InfNfse.Competencia.Value),"yyyy-MM-dd", CultureInfo.InvariantCulture) 
+                : null;
+
+        public override decimal TaxBaseValue => throw new NotImplementedException();
+
+        public override bool IsServiceExport => NFe.DeclaracaoPrestacaoServico.Tomador.Endereco.Uf.Count > 1 && 
+            ((string)NFe.DeclaracaoPrestacaoServico.Tomador.Endereco.Uf).ToLower() == "ex";
+    }
+}

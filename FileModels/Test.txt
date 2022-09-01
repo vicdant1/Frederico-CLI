@@ -1,0 +1,78 @@
+using HubCount.Nfes.Domain.Enums;
+using HubCount.Nfes.Integration.Importers;
+using HubCount.Nfes.Util;
+using Shouldly;
+using System;
+using System.Threading.Tasks;
+using Xunit;
+
+namespace HubCount.Nfes.Tests.NFe.InvoiceIntegration
+{
+    public class __SystemName___Test : BaseInvoiceIntegrationTest<I__SystemName__Integration>
+    {
+        public __SystemName___Test()
+        {
+        }
+
+        [Theory]
+        [InlineData(
+            new object[] { "Name", "NAME" },
+            new object[] { "CityInscription", "999999" },
+            new object[] { "AuthorizationType", ECompanyAuthorizationType.Login },
+            new object[] { "CNPJ", "999999" },
+            new object[] { "CityIBGECode", "999999" },
+            new object[] { "Login", "999999" },
+            new object[] { "Password", "999999" },
+            new object[] { "A1CertificateString", "999999" },
+            new object[] { "IntervalDate", "dd/MM/yyyy" })]
+        public virtual async Task Should_Integrate_Nfes_Test(params object[] companyInlineInput)
+        {
+            var companyTest = new CompanyTestObject(companyInlineInput);
+            int nfesCount = await GetCompanyNfes(companyTest);
+            nfesCount.ShouldBeGreaterThan(0);
+        }
+
+        [Fact]
+        public virtual void Should_Wrapper_Convert_To_Nfe()
+        {
+            LoginAsDefaultTenantAdmin();
+
+            var nfResult = TestWrapperForXml(TestXml, EInvoiceClass.NFSP);
+            ((string)nfResult["Number"]).CleanCNPJ().ShouldBe("11");
+            ((string)nfResult["VerificationCode"]).ShouldBe("STPA72933");
+            ((string)nfResult["CompanyCPFCNPJ"]).ShouldBe("41.146.388/0001-10");
+            
+            ((DateTime)nfResult["IssueDate"]).ToString("dd/MM/yyyy").ShouldBe("22/02/2022");
+            ((DateTime)nfResult["CompetencyDate"]).ToString("dd/MM/yyyy").ShouldBe("22/02/2022");
+            ((EInvoiceStatus)nfResult["Status"]).ShouldBe(EInvoiceStatus.Normal);
+            ((string)nfResult["ServiceCode"]).ShouldBe("401");
+            ((double)nfResult["ServiceTaxRate"]).ShouldBe(2.01d);
+            ((decimal)nfResult["Value"]).ShouldBe(Convert.ToDecimal(22400.0));
+            ((decimal)nfResult["TaxBaseValue"]).ShouldBe(Convert.ToDecimal(22400.0));
+            ((bool)nfResult["IsServiceExport"]).ShouldBe(false);
+            ((bool)nfResult["IsISSWithhold"]).ShouldBe(false);
+
+            ((string)nfResult["ProviderCPFCNPJ"]).ShouldBe("35.650.324/0001-50");
+            ((string)nfResult["ProviderName"]).ShouldBe("CARDIODIAGNOSTICO LTDA");
+            ((string)nfResult["ProviderMunicipalRegistration"]).ShouldBe("");
+            ((string)nfResult["ProviderCEP"]).ShouldBe("0");
+            ((string)nfResult["ProviderCityCode"]).ShouldBe("");
+            ((string)nfResult["ProviderStateAcronym"]).ShouldBe("");
+
+            //((decimal)nfResult["PisTax"]).ShouldBe(Convert.ToDecimal(0.0));
+            //((decimal)nfResult["CofinsTax"]).ShouldBe(Convert.ToDecimal(0.0));
+            //((decimal)nfResult["InssTax"]).ShouldBe(Convert.ToDecimal(0.0));
+            //((decimal)nfResult["IrrfTax"]).ShouldBe(Convert.ToDecimal(0.0));
+            //((decimal)nfResult["CsllTax"]).ShouldBe(Convert.ToDecimal(0.0));
+            //((decimal)nfResult["IssValue"]).ShouldBe(Convert.ToDecimal(0));
+        }
+
+        #region XML
+            public string TestXml = "";
+
+            /* TestXML Example (Adequar para sua situação):
+                <?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><ConsultarNfseResposta xmlns=\"http://tributosInformatica.com.br\"><ListaNfse xmlns=\"\"><CompNfse><Nfse versao=\"2.03\"><InfNfse id=\"NFSE-P0021-11\"><Numero>11</Numero><CodigoVerificacao>STPA72933</CodigoVerificacao><IdentificaoRps>0</IdentificaoRps><StatusRps>1</StatusRps><StatusNfse>1</StatusNfse><DataEmissao>2022-02-22T00:00:00Z</DataEmissao><NaturezaOperacao>1</NaturezaOperacao><RegimeEspecialTributacao>6</RegimeEspecialTributacao><OptanteSimplesNacional>0</OptanteSimplesNacional><IncentivadorCultural>2</IncentivadorCultural><Competencia>2022-02-22</Competencia><Servico><Valores><ValorServicos>22400.0</ValorServicos><ValorDeducoes>0.0</ValorDeducoes><ValorPis>0.0</ValorPis><ValorCofins>0.0</ValorCofins><ValorInss>0.0</ValorInss><ValorIr>0.0</ValorIr><ValorCsll>0.0</ValorCsll><OutrasRetencoes>0.0</OutrasRetencoes><IssRetido>2</IssRetido><ValorIss>450.24</ValorIss><ValorIssRetido>0.0</ValorIssRetido><BaseCalculo>22400.0</BaseCalculo><Aliquota>2.01</Aliquota><DescontoCondicionado>0.0</DescontoCondicionado><DescontoIncondicionado>0.0</DescontoIncondicionado><ValorLiquidoNfse>22400.0</ValorLiquidoNfse></Valores><ItemListaServico>401</ItemListaServico><CodigoCnae>8630503</CodigoCnae><Discriminacao>1,00 22.400,00 REFERENTE AOS PLANTOES MEDICO NA UTI REALIZADOS NO MES DE JANEIRO. (DR. ANDRE 11.200,00 E DR. REIKSON 11.200,00)</Discriminacao><CodigoMunicipio>2409407</CodigoMunicipio></Servico><ValorCredito>0.00</ValorCredito><PrestadorServico><IdentificacaoPrestador><Cnpj>41146388000110</Cnpj><InscricaoMunicipal>920746</InscricaoMunicipal></IdentificacaoPrestador><RazaoSocial>AQUINO &amp; FILGUEIRA SERVICOS MEDICOS LTDA</RazaoSocial><NomeFantasia/><Endereco><Endereco>RUA JOSE ALVES DE QUEIROZ</Endereco><Numero>234</Numero><Complemento>SALA 04</Complemento><Bairro>ALUIZIO DIOGENES</Bairro><CodigoMunicipio>2409407</CodigoMunicipio><Uf>RN</Uf><Cep>0</Cep></Endereco><Contato><Telefone/><Email>BVILASSA@GMAIL.COM</Email></Contato></PrestadorServico><TomadorServico><IdentificacaoTomador><CpfCnpj><Cnpj>35650324000150</Cnpj></CpfCnpj></IdentificacaoTomador><RazaoSocial>CARDIODIAGNOSTICO LTDA</RazaoSocial><Endereco><Endereco/><Numero/><Complemento/><Bairro/><CodigoMunicipio/><Uf/><Cep>0</Cep></Endereco><Contato><Telefone/><Email/></Contato></TomadorServico><OrgaoGerador><CodigoMunicipio>2409407</CodigoMunicipio><Uf>RN</Uf></OrgaoGerador><ConstrucaoCivil><CodigoObra/><NumeroArt/><OutrasInformacoes/></ConstrucaoCivil></InfNfse><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#NFSE-P0021-11\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/><Transform Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>3i8lpeotNoukAliNQ4XWbzasjSk=</DigestValue></Reference></SignedInfo><SignatureValue>JqeurGZ9PXzP5o7V1FOwOa42fxKHaXDN7zDo57OggtB+e1EGTa+10ik/TGBhUPd26rZtc9OISP1LOikOamDOgfNbjcY+14s5aYed39i27TTIpIbQnoiCgyZeG962fIl6tGyKhKNAcQHexIXlp72Ri3H4xlTStpWRcxK0YPZoeWmftj4uDsEk80JeuL3UhCbpzzeSbSsNUIX74MtoDeFJH4Muq82MCycMWbIm2PhsKO24DxF1MjqqyUtcC4FV7iK13zgZEC/DQcoRcDs7BFWzRV/0kYJ2uNewQ7kMIO9BcyhsP20FZH2Mx4SWbek7LejuogQaWXS1pvyybDYiOwE/DA==</SignatureValue><KeyInfo><X509Data><X509Certificate>MIICxjCCAa6gAwIBAgIEW0SsXDANBgkqhkiG9w0BAQsFADAlMSMwIQYDVQQDDBp0cmlidXRvc2luZm9ybWF0aWNhLmNvbS5icjAeFw0xODA3MTAxMjUzNDhaFw0yODA3MTAxMjUzNDhaMCUxIzAhBgNVBAMMGnRyaWJ1dG9zaW5mb3JtYXRpY2EuY29tLmJyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqF0BQ8z4hH0LFt9JYBTagdvcVHQjSDq1ct8nCHk1r9hvoHtfBtMQ5yKzHD91kTEnM7hlPQN0ofNsgx0wvm/UTx4Vt8t2gv/arsbWUxnNrNezjTJVm10ULImRWZncZ05NM7gZCboR4Ip2S4mcoINahOl1hCKV/LReGFjhicbpRyHIvSFhJSElB7S/FL4yo9ACv8t4HrLS/Bcktb+wQM4xDJ8Yu8O5rahyDoOLvz8iqG6vnSSuYvCo9ijBejGYiG7S00y+lcvlmcu8iV40cS2ou09PFkG3lvqMhfJAXJxPp1KjoigIxCvaX4N6NP7km0n3iE0oOSp/HOlUJ3szl32SnwIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQB7ATSFWiQalmKtYnPx/oys/79yKzLPiAVEehJxAOmdAog/98nAyP1rSC+zxiT3gAw49BwmZV6JXa14Ptpxy+VpFebd6pH4w6fY+PHxkpgDUhIGqPse7/KgTRm1W47TLrCm8J5u4a4xxhGkELuks4UAHaxFNX1WDM9gOktlY/c8SA67Y7N5cQ3+S9t06zJK5J//G0szn3a0Sw52XZwtROqV9HCWscnXQaPp9Vfx/bIVxsZVtpCTSnedaAYSHt6qAXlc6AL6xtCS0Vk3nYuuQe5cXy5y42/pTaFXWjLBwmmOAxBEy7Pk9seUV+FwqAaAx3Y2u5lpOlqHlZP70/kUGkUL</X509Certificate></X509Data></KeyInfo></Signature></Nfse></CompNfse></ListaNfse></ConsultarNfseResposta>
+            */
+        #endregion
+    }
+}
