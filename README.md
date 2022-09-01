@@ -16,4 +16,5 @@ Basicamente como o projeto ja é um executável, não precisa de instalação. R
 ## ToDo List
   - Finalizar esse repositório :/
   - Inserir funcionalidade para registrar o sistema no enum ECityProvider
+  - Inserir funcionalidade para registrar o sistema no InvoiceServiceSolver
   - Expandir a CLI para mais projetos da Hub
