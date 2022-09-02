@@ -10,8 +10,8 @@ Para obter o projeto você tem duas opções:
 git clone https://github.com/vicdant1/Frederico-CLI.git
 ```
 ## Instalação
-Basicamente como o projeto ja é um executável, não precisa de instalação. Recomendo fortemente que você clone esse repositório no C:/ do sistema e envie um atalho do CLI para o Desktop. Obs.: você também pode fixar o ícone na barra de tarefas, fica uma fofura! 😁
 
+Dentro da pasta Installer você encontrará o instalador do Frederico, basta que você dê um double-click no arquivo setup.exe 😎
 
 ## ToDo List
   - Finalizar esse repositório :/
