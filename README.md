@@ -19,3 +19,5 @@ Dentro da pasta Installer você encontrará o instalador do Frederico, basta que
   - Inserir funcionalidade para registrar o sistema no InvoiceServiceSolver
   - Expandir a CLI para mais projetos da Hub
   - Fazer o Frederico gerar Enums no projeto Core
+  - ~Fazer validação de diretórios~
+  - ~Criar comando de limpar tela ("/clear")~
